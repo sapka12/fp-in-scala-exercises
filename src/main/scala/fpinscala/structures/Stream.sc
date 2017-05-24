@@ -1,6 +1,7 @@
 import Stream._
 
 case object Empty extends Stream[Nothing]
+
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
 object Stream {
@@ -120,4 +121,25 @@ Stream(1, 2, 3, 4).filter(_ % 2 == 0).toList
 
 Stream(1, 2, 3, 4).append(Stream(5, 6)).toList
 
-Stream(Stream(1, 2),Stream(3), Stream(), Stream(4)).flatMap(s => s.map(_ * 2)).toList
+Stream(Stream(1, 2), Stream(3), Stream(), Stream(4)).flatMap(s => s.map(_ * 2)).toList
+
+val ones: Stream[Int] = Stream.cons(1, ones)
+def constant[A](a: A): Stream[A] = Stream.cons(a, constant(a))
+def from(n: Int): Stream[Int] = Stream.cons(n, from(n + 1))
+def fibs(n: Int, next: Int): Stream[Int] = Stream.cons(n, fibs(next, n + next))
+def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = f(z) match {
+  case None => Empty
+  case Some((a, s)) => Stream.cons(a, unfold(s)(f))
+}
+
+def fibWithUnfold: Stream[Int] = unfold[Int, (Int, Int)]((0, 1)) { n =>
+  Some(
+    n._1,
+    (n._2, n._1 + n._2)
+  )
+}
+
+constant(2).drop(3).take(2).toList
+from(1).drop(3).take(2).toList
+fibs(0, 1).take(10).toList
+fibWithUnfold.take(10).toList
