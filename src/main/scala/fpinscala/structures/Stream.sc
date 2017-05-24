@@ -4,6 +4,11 @@ case object Empty extends Stream[Nothing]
 
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
+def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = f(z) match {
+  case None => Empty
+  case Some((a, s)) => Stream.cons(a, unfold(s)(f))
+}
+
 object Stream {
 
   def cons[A](h: => A, t: => Stream[A]): Stream[A] = {
@@ -73,6 +78,11 @@ sealed trait Stream[+A] {
     (a, b) => cons(f(a), b)
   )
 
+  def mapWithUnfold[B](f: A => B): Stream[B] = unfold[B, Stream[A]](this)(_ match {
+    case Cons(a, tail) => Some((f(a()), tail()))
+    case _ => None
+  })
+
   def filter(f: A => Boolean): Stream[A] = this.foldRight[Stream[A]](Empty)(
     (a, b) => if (f(a)) cons(a, b) else b
   )
@@ -116,6 +126,7 @@ Stream(1, 2, 3).headOption
 Stream().headOption
 
 Stream(1, 2, 3, 4).map(_ * 3).toList
+Stream(1, 2, 3, 4).mapWithUnfold(_ * 3).toList
 
 Stream(1, 2, 3, 4).filter(_ % 2 == 0).toList
 
@@ -127,10 +138,7 @@ val ones: Stream[Int] = Stream.cons(1, ones)
 def constant[A](a: A): Stream[A] = Stream.cons(a, constant(a))
 def from(n: Int): Stream[Int] = Stream.cons(n, from(n + 1))
 def fibs(n: Int, next: Int): Stream[Int] = Stream.cons(n, fibs(next, n + next))
-def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = f(z) match {
-  case None => Empty
-  case Some((a, s)) => Stream.cons(a, unfold(s)(f))
-}
+
 
 def onesWithUnfold: Stream[Int] = unfold[Int, Unit](())(_ => Some((1, ())))
 def constantWithUnfold[A](a: A): Stream[A] = unfold[A, Unit](())(_ => Some((a, ())))

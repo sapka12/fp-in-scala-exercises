@@ -15,7 +15,7 @@ sealed trait Validator[+E, +A] {
     }
 
   def map2[EE >: E, B, C](b: Validator[EE, B])(f: (A, B) => C): Validator[EE, C] = {
-    this match  {
+    this match {
       case Invalid(aErrors) => b match {
         case Invalid(bErrors) => Invalid(aErrors ::: bErrors)
         case _ => Invalid(aErrors)
@@ -29,10 +29,11 @@ sealed trait Validator[+E, +A] {
 }
 
 case class Valid[+A](val a: A) extends Validator[Nothing, A]
+
 case class Invalid[+E](e: List[E]) extends Validator[E, Nothing]
 
 def traverse[E, A, B](as: List[A])(implicit f: A => Validator[E, B]): Validator[E, List[B]] =
-  as.foldLeft[Validator[E, List[B]]](Valid(List.empty[B])){
+  as.foldLeft[Validator[E, List[B]]](Valid(List.empty[B])) {
     (v, a) => v.map2(f(a))(_ ::: List(_))
   }
 
@@ -42,7 +43,7 @@ def sequence[E, A](es: List[Validator[E, A]]): Validator[E, List[A]] =
 
 def add(a: Int, b: Int): Int = a + b
 def reciprocal(i: Int): Validator[String, Double] =
-  if(i == 0) Invalid(List("Err */0"))
+  if (i == 0) Invalid(List("Err */0"))
   else Valid(1.0 / i)
 
 Valid(1).map(_ + 1)

@@ -1,4 +1,5 @@
 case class Left[+E](value: E) extends Either[E, Nothing]
+
 case class Right[+A](value: A) extends Either[Nothing, A]
 
 sealed trait Either[+E, +A] {
@@ -28,6 +29,7 @@ sealed trait Either[+E, +A] {
       a <- this
       bb <- b
     } yield f(a, bb)
+
   // def traverse[E, A, B](as: List[A])(f: A => Either[E, B]): Either[E, List[B]]
 
 }
@@ -74,7 +76,7 @@ sequence2[String, Int](List(Right(1), Right(2), Right(3)))
 sequence2[String, Int](List(Right(1), Left("ERR"), Right(3)))
 
 def traverse[E, A, B](as: List[A])(implicit f: A => Either[E, B]): Either[E, List[B]] =
-  as.foldLeft[Either[E, List[B]]](Right(List.empty[B])){
+  as.foldLeft[Either[E, List[B]]](Right(List.empty[B])) {
     (either, a) => f(a).map2(either)(_ :: _)
   }
 

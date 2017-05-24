@@ -1,7 +1,8 @@
 sealed trait Tree[+A]
-case class Leaf[A](value: A) extends Tree[A]
-case class Branch[A](l: Tree[A], r: Tree[A]) extends Tree[A]
 
+case class Leaf[A](value: A) extends Tree[A]
+
+case class Branch[A](l: Tree[A], r: Tree[A]) extends Tree[A]
 
 
 def fold[A, B](t: Tree[A])(f1: A => B, f2: (B, B) => B): B = t match {
@@ -17,7 +18,7 @@ def size[A](t: Tree[A]): Int = t match {
   case Branch(l, r) => 1 + size(l) + size(r)
 }
 
-def size2[A](t: Tree[A]): Int = fold[A, Int](t)(_ => 1,  1 + _ + _)
+def size2[A](t: Tree[A]): Int = fold[A, Int](t)(_ => 1, 1 + _ + _)
 
 
 

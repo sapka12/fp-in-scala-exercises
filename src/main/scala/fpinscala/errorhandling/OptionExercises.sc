@@ -1,4 +1,5 @@
 case class Some_[+A](get: A) extends Option[A]
+
 case object None extends Option[Nothing]
 
 sealed trait Option[+A] {
@@ -88,7 +89,9 @@ def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
 
 def Try[A](a: => A): Option[A] =
   try Some_(a)
-  catch { case e: Exception => None }
+  catch {
+    case e: Exception => None
+  }
 
 def parse(str: String): Option[Int] = Try(str.toInt)
 traverse(List("1", "a"))(parse)
