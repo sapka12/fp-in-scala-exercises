@@ -132,6 +132,10 @@ def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = f(z) match {
   case Some((a, s)) => Stream.cons(a, unfold(s)(f))
 }
 
+def onesWithUnfold: Stream[Int] = unfold[Int, Unit](())(_ => Some((1, ())))
+def constantWithUnfold[A](a: A): Stream[A] = unfold[A, Unit](())(_ => Some((a, ())))
+def fromWithUnfold(n: Int): Stream[Int] = unfold[Int, Int](n)(s => Some((s, s + 1)))
+
 def fibWithUnfold: Stream[Int] = unfold[Int, (Int, Int)]((0, 1)) { n =>
   Some(
     n._1,
@@ -142,4 +146,8 @@ def fibWithUnfold: Stream[Int] = unfold[Int, (Int, Int)]((0, 1)) { n =>
 constant(2).drop(3).take(2).toList
 from(1).drop(3).take(2).toList
 fibs(0, 1).take(10).toList
+
 fibWithUnfold.take(10).toList
+constantWithUnfold(2).drop(3).take(2).toList
+fromWithUnfold(10).drop(3).take(5).toList
+onesWithUnfold.drop(3).take(2).toList
