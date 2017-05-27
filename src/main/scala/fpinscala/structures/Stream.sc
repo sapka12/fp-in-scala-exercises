@@ -27,6 +27,7 @@ object Stream {
 }
 
 sealed trait Stream[+A] {
+
   def toList: List[A] = foldRight[List[A]](List.empty[A])(_ :: _)
 
   def foldRight[B](z: => B)(f: (A, => B) => B): B = this match {
@@ -83,12 +84,12 @@ sealed trait Stream[+A] {
     (a, b) => cons(f(a), b)
   )
 
-  def mapWithUnfold[B](f: A => B): Stream[B] = unfold[B, Stream[A]](this){
+  def mapWithUnfold[B](f: A => B): Stream[B] = unfold[B, Stream[A]](this) {
     case Cons(a, tail) => Some((f(a()), tail()))
     case _ => None
   }
 
-  def takeWithUnfold(n: Int): Stream[A] = unfold[A, (Stream[A], Int)]((this, n)){
+  def takeWithUnfold(n: Int): Stream[A] = unfold[A, (Stream[A], Int)]((this, n)) {
     case (Cons(h, tail), takeN) if takeN > 0 => Some((h(), (tail(), takeN - 1)))
     case _ => None
   }
@@ -111,7 +112,7 @@ sealed trait Stream[+A] {
       case _ => None
     }
 
-  def zipAll[B](s2: Stream[B]): Stream[(Option[A],Option[B])] = unfold(this, s2){
+  def zipAll[B](s2: Stream[B]): Stream[(Option[A], Option[B])] = unfold(this, s2) {
     case (Cons(a, as), Cons(b, bs)) => Some(
       (Some(a()), Some(b())),
       (as(), bs())
@@ -127,14 +128,25 @@ sealed trait Stream[+A] {
     case _ => None
   }
 
-  def startsWith[A](s: Stream[A]): Boolean = this.zipAll(s).takeWhile{
+  def startsWith[A](s: Stream[A]): Boolean = this.zipAll(s).takeWhile {
     case (_, Some(_)) => true
     case _ => false
-  }.forAll{
+  }.forAll {
     case (a, b) => a == b
   }
 
+
+  def tails: Stream[Stream[A]] = unfold(this) {
+    case s@Cons(_, t) => Some((s, t()))
+    case Empty => None
+  } append (Stream(empty[A]))
+
+  //TODO make it more efficient
+  def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] =
+    tails.map(_.foldRight(z)(f))
 }
+
+Stream(1, 2, 3).scanRight(0)(_ + _).toList
 
 Stream(1, 2, 3, 4).toList
 
@@ -239,3 +251,6 @@ empty[Int].startsWith(Stream(1))
 Stream(1, 2, 3, 4).startsWith(Stream(1, 2, 3, 4, 5))
 
 ones.startsWith(Stream(1, 1, 1))
+
+Stream(1, 2, 3, 4).tails.toList.map(_.toList)
+empty[Int].tails.toList.map(_.toList)
