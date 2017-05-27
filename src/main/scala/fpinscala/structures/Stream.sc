@@ -127,24 +127,14 @@ sealed trait Stream[+A] {
     case _ => None
   }
 
-  def startsWith[A](s: Stream[A]): Boolean = this.zipAll(s).forAll{
-    case (Some(a), Some(b)) if a == b => true
-    case (Some(_), None) => true
+  def startsWith[A](s: Stream[A]): Boolean = this.zipAll(s).takeWhile{
+    case (_, Some(_)) => true
     case _ => false
+  }.forAll{
+    case (a, b) => a == b
   }
 
 }
-
-Stream(1, 2, 3, 4).startsWith(Stream())
-Stream(1, 2, 3, 4).startsWith(Stream(1))
-
-Stream(1, 2, 3, 4).startsWith(Stream(1, 2))
-Stream(1, 2, 3, 4).startsWith(Stream(1, 2, 3, 4))
-Stream(1, 2, 3, 4).startsWith(Stream(2))
-
-empty[Int].startsWith(Stream(1))
-Stream(1, 2, 3, 4).startsWith(Stream(1, 2, 3, 4, 5))
-
 
 Stream(1, 2, 3, 4).toList
 
@@ -197,7 +187,6 @@ def constant[A](a: A): Stream[A] = Stream.cons(a, constant(a))
 def from(n: Int): Stream[Int] = Stream.cons(n, from(n + 1))
 def fibs(n: Int, next: Int): Stream[Int] = Stream.cons(n, fibs(next, n + next))
 
-
 def onesWithUnfold: Stream[Int] = unfold[Int, Unit](())(_ => Some((1, ())))
 def constantWithUnfold[A](a: A): Stream[A] = unfold[A, Unit](())(_ => Some((a, ())))
 def fromWithUnfold(n: Int): Stream[Int] = unfold[Int, Int](n)(s => Some((s, s + 1)))
@@ -237,3 +226,16 @@ Stream(1.3).zipAll(Stream("123", "1234")).toList
 Stream(1.3, 2.45).zipAll(Stream("123")).toList
 Stream().zipAll(Stream("123", "1234")).toList
 Stream(1.3, 2.45).zipAll(Stream()).toList
+
+
+Stream(1, 2, 3, 4).startsWith(Stream())
+Stream(1, 2, 3, 4).startsWith(Stream(1))
+
+Stream(1, 2, 3, 4).startsWith(Stream(1, 2))
+Stream(1, 2, 3, 4).startsWith(Stream(1, 2, 3, 4))
+Stream(1, 2, 3, 4).startsWith(Stream(2))
+
+empty[Int].startsWith(Stream(1))
+Stream(1, 2, 3, 4).startsWith(Stream(1, 2, 3, 4, 5))
+
+ones.startsWith(Stream(1, 1, 1))
