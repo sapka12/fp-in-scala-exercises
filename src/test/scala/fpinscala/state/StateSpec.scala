@@ -52,4 +52,20 @@ class StateSpec extends FlatSpec {
     assert(expectedString._1 == result._1(1))
   }
 
+  behavior of "machine"
+
+  it should "do simple opertaion" in {
+
+    val machine = Machine(true, 10, 5)
+
+    val state = State.simulateMachine(List(
+      Coin,
+      Turn
+    )).run(machine)
+
+    state._2 === Machine(true, 9, 6)
+
+
+  }
+
 }
