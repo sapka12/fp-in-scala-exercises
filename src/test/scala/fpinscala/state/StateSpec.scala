@@ -64,8 +64,23 @@ class StateSpec extends FlatSpec {
     )).run(machine)
 
     state._2 === Machine(true, 9, 6)
-
-
   }
+
+  it should "do simple opertaion 2" in {
+
+    val machine = Machine(true, 2, 2)
+
+    val state = State.simulateMachine(List(
+      Coin,
+      Turn,
+      Coin,
+      Turn,
+      Coin,
+      Turn
+    )).run(machine)
+
+    state._1 === (0, 5)
+  }
+
 
 }

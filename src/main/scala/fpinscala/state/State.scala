@@ -114,16 +114,23 @@ case class State[S, +A](run: S => (A, S)) {
     }
   }
 
-  def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] = State { s =>
-    val (a, sa) = run(s)
-    val (b, sb) = run(sa)
-    (f(a, b), sb)
-  }
+//  flatMap(ra) { a =>
+//    flatMap(rb) { b =>
+//      unit(f(a, b))
+//    }
+//  }
 
   def flatMap[B](f: A => State[S, B]): State[S, B] = State { s =>
     val (a, sa) = run(s)
     f(a).run(sa)
   }
+
+  def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
+    flatMap { a =>
+      sb.flatMap { b =>
+        State.unit(f(a, b))
+      }
+    }
 }
 
 sealed trait Input
@@ -137,30 +144,44 @@ object State {
 
   def unit[S, A](a: A) = State[S, A](s => (a, s))
 
-  def sequence[S, A](fs: List[State[S, A]]): State[S, List[A]] = fs.foldRight[State[S, List[A]]](
-    unit[S, List[A]](List())
-  ){
-    (s, list) => s.map2(list)(_ :: _)
-  }
-
-
-  def oneStep(input: Input): State[Machine, (Int, Int)] = State[Machine, (Int, Int)]{ machine =>
-    input match {
-      case Coin if machine.locked && machine.candies > 0 =>
-        val newMachine = machine.copy(locked = false, coins = machine.coins + 1)
-        ((machine.coins, machine.candies), newMachine)
-      case Coin if machine.locked =>
-        val newMachine = machine.copy(locked = false, coins = machine.coins + 1)
-        ((machine.coins, machine.candies), newMachine)
-
-
-
-//TODO ...
-      case Coin if !machine.locked => ((machine.coins, machine.candies), machine)
-      case Turn if machine.locked => ((machine.coins, machine.candies), machine)
-      case Turn if !machine.locked => ((machine.coins, machine.candies), machine)
+  def sequence[S, A](fs: List[State[S, A]]): State[S, List[A]] =
+    fs.foldRight[State[S, List[A]]](
+      unit[S, List[A]](List())
+    ) { (s, list) =>
+      s.map2(list)(_ :: _)
     }
+
+
+
+  def mac(machine: Machine, input: Input): Machine = {
+
+    println(s"machine{ $machine } has input: $input")
+
+    val out = input match {
+      case Coin if machine.locked && machine.candies > 0 =>
+        Machine(false, machine.candies, machine.coins + 1)
+      case Coin if machine.locked =>
+        Machine(true, machine.candies, machine.coins + 1)
+      case Coin if !machine.locked =>
+        Machine(true, machine.candies, machine.coins + 1)
+      case Turn if machine.locked =>
+        Machine(true, machine.candies, machine.coins)
+      case Turn if !machine.locked =>
+        Machine(true, machine.candies - 1, machine.coins)
+    }
+
+    println(s"became { $out }")
+    println()
+
+    out
   }
 
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+  def simMac(inputs: List[Input], machine: Machine): Machine =
+    inputs.foldLeft[Machine](machine)(mac(_, _))
+
+  private val toState: Machine => ((Int, Int), Machine) = m =>
+    ((m.coins, m.candies), m)
+
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
+    State(m => toState(simMac(inputs, m)))
 }
